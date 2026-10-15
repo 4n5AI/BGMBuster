@@ -93,7 +93,6 @@ export class RealFFT {
    * Forward real FFT. `input` has N real samples; writes N/2+1 complex bins to `outRe` / `outIm`.
    */
   forward(input: ArrayLike<number>, outRe: Float32Array | Float64Array, outIm: Float32Array | Float64Array): void {
-    const N = this.size;
     const M = this.half;
     const re = this.re;
     const im = this.im;
@@ -126,7 +125,6 @@ export class RealFFT {
    * Inverse real FFT. Reads N/2+1 complex bins; writes N real samples scaled by 1/N (numpy irfft convention).
    */
   inverse(inRe: ArrayLike<number>, inIm: ArrayLike<number>, output: Float32Array | Float64Array): void {
-    const N = this.size;
     const M = this.half;
     const re = this.re;
     const im = this.im;
@@ -151,6 +149,5 @@ export class RealFFT {
       output[2 * k] = re[k] * scale;
       output[2 * k + 1] = im[k] * scale;
     }
-    void N;
   }
 }

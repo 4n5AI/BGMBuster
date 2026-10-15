@@ -1,0 +1,33 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex">
+<title>BGM Buster — benchmark</title>
+<style>
+  :root { color-scheme: light dark; font-family: system-ui, sans-serif; }
+  body { max-width: 720px; margin: 2rem auto; padding: 0 16px; line-height: 1.5; }
+  button { font: inherit; padding: 0.5rem 1rem; margin-right: 0.5rem; }
+  pre { white-space: pre-wrap; word-break: break-word; background: rgba(127,127,127,0.12); padding: 1rem; border-radius: 8px; }
+  label { margin-right: 1rem; }
+</style>
+</head>
+<body>
+<h1>BGM Buster benchmark</h1>
+<p>Measures model download, session creation and separation of a synthetic stereo clip on this device. Nothing is uploaded.</p>
+<p>
+  <label>Seconds <input id="seconds" type="number" value="10" min="2" max="60" step="1"></label>
+  <label>Chunk <input id="chunk" type="number" value="10" min="2" max="30" step="1"></label>
+  <label>Overlap <input id="overlap" type="number" value="2" min="0" max="5" step="0.5"></label>
+</p>
+<p>
+  <button id="run-auto">Run (auto backend)</button>
+  <button id="run-webgpu">Run WebGPU</button>
+  <button id="run-wasm">Run WASM</button>
+  <button id="cancel">Cancel</button>
+</p>
+<pre id="log">ready</pre>
+<script type="module" src="/src/bench.ts"></script>
+</body>
+</html>
