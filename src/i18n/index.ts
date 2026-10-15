@@ -75,11 +75,13 @@ export function formatClock(seconds: number): string {
 
 /** Rounded duration in words: "20秒" / "20 sec", "3分" / "3 min". */
 export function formatDurationWords(seconds: number, lang: Lang = current): string {
-  const locale = lang === 'ja' ? 'ja-JP' : 'en-US';
-  const unit = (value: number, u: 'second' | 'minute' | 'hour'): string =>
-    new Intl.NumberFormat(locale, { style: 'unit', unit: u, unitDisplay: lang === 'ja' ? 'narrow' : 'short', maximumFractionDigits: 0 }).format(value);
-  if (seconds < 60) return unit(Math.max(1, Math.round(seconds / 5) * 5), 'second');
-  if (seconds < 3600) return unit(Math.round(seconds / 60), 'minute');
+  const jaUnits = { second: '秒', minute: '分', hour: '時間' } as const;
+  const unit = (value: number, u: 'second' | 'minute' | 'hour'): string => {
+    if (lang === 'ja') return `${value}${jaUnits[u]}`; // not every ICU build ships Japanese unit names
+    return new Intl.NumberFormat('en-US', { style: 'unit', unit: u, unitDisplay: 'short', maximumFractionDigits: 0 }).format(value);
+  };
+  if (seconds < 60) return unit(Math.max(5, Math.round(seconds / 5) * 5), 'second');
+  if (seconds < 3600) return unit(Math.max(1, Math.round(seconds / 60)), 'minute');
   return unit(Math.round(seconds / 3600), 'hour');
 }
 
