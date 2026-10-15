@@ -1,0 +1,26 @@
+{
+  "name": "bgm-buster",
+  "version": "0.1.0",
+  "private": true,
+  "description": "BGM排除くん（BGM Buster）｜動画のBGMだけをブラウザで消す。ファイルは外部に送信されません。／ Remove background music from video in your browser. Your file never leaves your device.",
+  "license": "MIT",
+  "author": "4n5-Studio",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc --noEmit -p tsconfig.json && vite build",
+    "preview": "vite preview",
+    "typecheck": "tsc --noEmit -p tsconfig.json",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@mediabunny/aac-encoder": "1.61.4",
+    "mediabunny": "1.61.4",
+    "onnxruntime-web": "1.30.0"
+  },
+  "devDependencies": {
+    "typescript": "6.0.3",
+    "vite": "8.3.4",
+    "vitest": "5.0.4"
+  }
+}
