@@ -41,6 +41,6 @@ export interface ResultMessage {
 
 export type WorkerResponse =
   | ProgressMessage
-  | { type: 'loaded'; backend: Backend; elapsedSeconds: number }
+  | { type: 'loaded'; backend: Backend; elapsedSeconds: number; adapter?: string; reason?: string; selfTest: 'passed' | 'failed' | 'skipped' }
   | ResultMessage
   | { type: 'error'; kind: ErrorKind; message: string; detail?: string };

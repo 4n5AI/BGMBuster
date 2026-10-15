@@ -10,6 +10,7 @@ import type { MessageKey } from '../i18n/ja.ts';
 import { decodeAudioTrack } from '../media/decode.ts';
 import { MediaError, openMedia, type OpenedMedia } from '../media/probe.ts';
 import { CanceledError, SeparationClient, SeparationError } from '../separation/client.ts';
+import type { BackendPreference } from '../separation/model.ts';
 import type { AppError, SeparationOutput, Store } from './state.ts';
 
 void EXPORT;
@@ -71,6 +72,12 @@ export function toAppError(e: unknown): AppError {
   return { key: 'error.unknown', actions: ['retry'], detail };
 }
 
+/** `?backend=wasm` or `?backend=webgpu` forces a backend (diagnostics). */
+function preferredBackend(): BackendPreference {
+  const v = new URLSearchParams(location.search).get('backend');
+  return v === 'wasm' || v === 'webgpu' ? v : 'auto';
+}
+
 function chunkSeconds(): number {
   const mem = (navigator as Navigator & { deviceMemory?: number }).deviceMemory;
   return mem !== undefined && mem <= 4 ? 10 : CHUNK.seconds;
@@ -116,13 +123,16 @@ export class Pipeline {
     try {
       this.store.set({ phase: 'preparing', canceled: false, error: null, progress: { stage: 'model', fraction: null } });
       const t0 = performance.now();
-      const load = await this.client.load({ modelUrl: this.modelUrl(), sha256: MODEL.sha256, bytes: MODEL.bytes, prefer: 'auto' }, (p) => {
+      const load = await this.client.load({ modelUrl: this.modelUrl(), sha256: MODEL.sha256, bytes: MODEL.bytes, prefer: preferredBackend() }, (p) => {
         if (id !== this.runId) return;
         if (p.stage === 'download') this.store.set({ progress: { stage: 'model', fraction: p.fraction, loaded: p.loaded, total: p.total } });
         else this.store.set({ progress: { stage: 'model', fraction: null } });
       });
       if (id !== this.runId) return;
       tech.backend = load.backend;
+      tech.adapter = load.adapter;
+      tech.backendReason = load.reason;
+      tech.selfTest = load.selfTest;
       tech.modelLoadSeconds = (performance.now() - t0) / 1000;
       tech.wasmSlow = load.backend === 'wasm';
       this.store.set({ phase: 'processing', tech, progress: { stage: 'read', fraction: 0 } });

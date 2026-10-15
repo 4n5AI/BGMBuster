@@ -41,6 +41,9 @@ export type ProgressHandler = (p: ProgressMessage) => void;
 export interface LoadResult {
   backend: Backend;
   elapsedSeconds: number;
+  adapter?: string;
+  reason?: string;
+  selfTest: 'passed' | 'failed' | 'skipped';
 }
 
 export type SeparationResult = Omit<ResultMessage, 'type'>;
@@ -103,7 +106,7 @@ export class SeparationClient {
     const res = await this.request({ type: 'load', ...options }, onProgress);
     if (res.type !== 'loaded') throw new SeparationError('unknown', `unexpected response ${res.type}`);
     this.backend = res.backend;
-    return { backend: res.backend, elapsedSeconds: res.elapsedSeconds };
+    return { backend: res.backend, elapsedSeconds: res.elapsedSeconds, adapter: res.adapter, reason: res.reason, selfTest: res.selfTest };
   }
 
   /**

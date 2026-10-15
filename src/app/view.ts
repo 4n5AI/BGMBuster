@@ -326,7 +326,13 @@ export class View {
     ];
     const tech = state.tech;
     const rows: [string, string][] = [];
-    if (tech.backend) rows.push([t('tech.backend'), `${t(tech.backend === 'webgpu' ? 'tech.backend.webgpu' : 'tech.backend.wasm')}${tech.adapter ? ` · ${tech.adapter}` : ''}`]);
+    if (tech.backend) {
+      const parts = [t(tech.backend === 'webgpu' ? 'tech.backend.webgpu' : 'tech.backend.wasm')];
+      if (tech.adapter) parts.push(tech.adapter);
+      if (tech.selfTest) parts.push(`self-test ${tech.selfTest}`);
+      if (tech.backendReason) parts.push(tech.backendReason);
+      rows.push([t('tech.backend'), parts.join(' · ')]);
+    }
     rows.push([t('tech.model'), `${MODEL.id} (${formatBytes(MODEL.bytes)})`]);
     if (state.info) rows.push([t('tech.input'), `${state.info.formatName} · ${state.info.audio.codec ?? '?'} ${state.info.audio.sampleRate} Hz ${state.info.audio.channels} ch${state.info.video ? ` · ${state.info.video.codec ?? '?'}` : ''}`]);
     const times: string[] = [];

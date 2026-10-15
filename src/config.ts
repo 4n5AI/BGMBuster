@@ -33,6 +33,19 @@ export const LIMITS = {
   maxDurationSeconds: 10 * 60,
 } as const;
 
+/**
+ * Backend self-test reference: mean mask values of the probe signal (src/separation/selftest.ts) computed with
+ * the WebAssembly backend (scripts/bench/selftest-ref.mjs). A backend that deviates by more than `tolerance`
+ * (relative) is not used.
+ */
+export const SELFTEST = {
+  reference: {
+    m1024: [0.289729249645187, 0.02862918033156291, 0.11483864020241395] as [number, number, number],
+    m8192: [0.16376951768570464, 0.037117100353904156, 0.17458748416302752] as [number, number, number],
+  },
+  tolerance: 0.05,
+} as const;
+
 /** Audio encoding when writing video. */
 export const EXPORT = {
   aacMinBitrate: 128_000,

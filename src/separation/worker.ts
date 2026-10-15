@@ -39,7 +39,15 @@ async function handleLoad(req: Extract<WorkerRequest, { type: 'load' }>): Promis
   if (model) await model.dispose();
   model = new MrxModel();
   const backend = await model.load(bytes, req.prefer);
-  post({ type: 'loaded', backend, elapsedSeconds: (performance.now() - t0) / 1000 });
+  const info = model.info;
+  post({
+    type: 'loaded',
+    backend,
+    elapsedSeconds: (performance.now() - t0) / 1000,
+    adapter: info?.adapter,
+    reason: info?.reason,
+    selfTest: info?.selfTest ?? 'skipped',
+  });
 }
 
 async function handleSeparate(req: Extract<WorkerRequest, { type: 'separate' }>): Promise<void> {

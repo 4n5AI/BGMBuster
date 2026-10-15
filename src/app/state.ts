@@ -44,6 +44,8 @@ export interface SeparationOutput {
 export interface Tech {
   backend?: Backend;
   adapter?: string;
+  backendReason?: string;
+  selfTest?: 'passed' | 'failed' | 'skipped';
   modelLoadSeconds?: number;
   decodeSeconds?: number;
   separateSeconds?: number;

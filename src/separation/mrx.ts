@@ -5,9 +5,10 @@
  */
 import wasmCpuUrl from 'onnxruntime-web/ort-wasm-simd-threaded.wasm?url';
 import wasmGpuUrl from 'onnxruntime-web/ort-wasm-simd-threaded.asyncify.wasm?url';
-import { MODEL } from '../config.ts';
+import { MODEL, SELFTEST } from '../config.ts';
 import { istft, magnitudeFT, stft, type Spectrogram } from '../audio/stft.ts';
 import type { Backend, BackendPreference, SeparationModel, SourceName, Stems } from './model.ts';
+import { maskStats, probeSignal, statsMatch } from './selftest.ts';
 
 type Ort = typeof import('onnxruntime-web');
 type Session = import('onnxruntime-web').InferenceSession;
@@ -19,7 +20,10 @@ export interface MrxLoadInfo {
   backend: Backend;
   /** Description of the GPU adapter when WebGPU is used. */
   adapter?: string;
+  /** Why WebGPU was not used (when it was available but failed). */
   reason?: string;
+  /** Result of the backend self-test (probe masks against WebAssembly reference values). */
+  selfTest: 'passed' | 'failed' | 'skipped';
 }
 
 async function gpuAvailable(): Promise<string | null> {
@@ -47,6 +51,7 @@ export class MrxModel implements SeparationModel {
 
   async load(modelBytes: ArrayBuffer, prefer: BackendPreference): Promise<Backend> {
     const bytes = new Uint8Array(modelBytes);
+    let reason: string | undefined;
     if (prefer !== 'wasm') {
       const adapter = await gpuAvailable();
       if (adapter) {
@@ -56,16 +61,24 @@ export class MrxModel implements SeparationModel {
           const session = await ort.InferenceSession.create(bytes, { executionProviders: ['webgpu'] });
           this.ort = ort;
           this.session = session;
-          this.info = { backend: 'webgpu', adapter };
-          return 'webgpu';
+          const ok = await this.selfTest();
+          if (ok) {
+            this.info = { backend: 'webgpu', adapter, selfTest: 'passed' };
+            return 'webgpu';
+          }
+          await session.release();
+          this.ort = null;
+          this.session = null;
+          if (prefer === 'webgpu') throw new Error('WebGPU self-test failed');
+          reason = `WebGPU self-test failed on ${adapter}`;
         } catch (e) {
           if (prefer === 'webgpu') throw e;
-          this.info = { backend: 'wasm', reason: `WebGPU failed: ${e instanceof Error ? e.message : String(e)}` };
+          reason ??= `WebGPU failed: ${e instanceof Error ? e.message : String(e)}`;
         }
       } else if (prefer === 'webgpu') {
         throw new Error('WebGPU is not available');
       } else {
-        this.info = { backend: 'wasm', reason: 'no WebGPU adapter' };
+        reason = 'no WebGPU adapter';
       }
     }
     const ort = (await import('onnxruntime-web/wasm')) as Ort;
@@ -73,8 +86,33 @@ export class MrxModel implements SeparationModel {
     const session = await ort.InferenceSession.create(bytes, { executionProviders: ['wasm'] });
     this.ort = ort;
     this.session = session;
-    this.info ??= { backend: 'wasm' };
+    const ok = await this.selfTest();
+    this.info = { backend: 'wasm', reason, selfTest: ok ? 'passed' : 'failed' };
     return 'wasm';
+  }
+
+  /** Runs the probe through the current session and compares mask statistics with the reference. */
+  private async selfTest(): Promise<boolean> {
+    if (!this.ort || !this.session) return false;
+    try {
+      const x = probeSignal();
+      const feeds: Record<string, import('onnxruntime-web').Tensor> = {};
+      const specs: Spectrogram[] = [];
+      for (const n of MRX_WINDOWS) {
+        const spec = stft(x, n, MRX_HOP);
+        specs.push(spec);
+        feeds[`mag_${n}`] = new this.ort.Tensor('float32', magnitudeFT(spec), [1, spec.bins, spec.frames]);
+      }
+      const results = await this.session.run(feeds);
+      const stats = maskStats(results, specs);
+      for (const t of Object.values(results)) t.dispose?.();
+      const ok = statsMatch(stats, SELFTEST.reference, SELFTEST.tolerance);
+      if (!ok) console.warn('MRX self-test mismatch', stats, 'expected', SELFTEST.reference);
+      return ok;
+    } catch (e) {
+      console.warn('MRX self-test error', e);
+      return false;
+    }
   }
 
   async separateChunk(mono: Float32Array): Promise<Stems> {
