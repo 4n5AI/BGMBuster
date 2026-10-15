@@ -132,8 +132,15 @@ export class View {
     if (state.info) {
       const info = state.info;
       const detail = info.video ? formatDimensions(info.video.width, info.video.height) : t('file.audioOnly');
+      const sep = t('file.summary', { name: '', duration: '', detail: '' }).trim().charAt(0) || '·';
       children.push(
-        h('p', { class: 'file-summary' }, icon(info.video ? 'film' : 'music', 18), h('span', null, t('file.summary', { name: info.fileName, duration: formatClock(info.duration), detail }))),
+        h(
+          'p',
+          { class: 'file-summary' },
+          icon(info.video ? 'film' : 'music', 18),
+          h('span', { class: 'file-name' }, info.fileName),
+          h('span', { class: 'file-detail' }, ` ${sep} ${formatClock(info.duration)} ${sep} ${detail}`),
+        ),
       );
       for (const note of state.notes) children.push(h('p', { class: 'note' }, t(note)));
     }

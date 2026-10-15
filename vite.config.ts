@@ -12,8 +12,8 @@ export default defineConfig({
       input: {
         main: 'index.html',
         bench: 'bench.html',
-        // development-only page for the media round-trip check
-        ...(process.env.BGM_DEV_PAGES ? { mediaTest: 'dev/media-test.html' } : {}),
+        // diagnostics page (noindex): media round trip with an in-browser sync check
+        mediaTest: 'dev/media-test.html',
       },
     },
   },
