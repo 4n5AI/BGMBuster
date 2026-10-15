@@ -1,0 +1,18 @@
+# 依存・ビルド生成物
+node_modules/
+dist/
+.vite/
+
+# モデルの元チェックポイント（122MB・GitHub の上限超え。scripts/ で取得する）
+scripts/parity/checkpoints/
+*.pth
+
+# 一時ファイル
+__pycache__/
+.DS_Store
+*.log
+
+# 秘密情報（コミットしない）
+.env
+.env.*
+*.key
