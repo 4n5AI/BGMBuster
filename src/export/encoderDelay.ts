@@ -72,7 +72,12 @@ export async function measureEncoderDelay(codec: AudioCodec, sampleRate: number,
   const source = new AudioSampleSource({ codec, quality: new Quality({ bitrate }) });
   output.addAudioTrack(source);
   await output.start();
-  await source.add(new AudioSample({ data: planar, format: 'f32-planar', numberOfChannels: channels, sampleRate, timestamp: 0 }));
+  const probeSample = new AudioSample({ data: planar, format: 'f32-planar', numberOfChannels: channels, sampleRate, timestamp: 0 });
+  try {
+    await source.add(probeSample);
+  } finally {
+    probeSample.close();
+  }
   source.close();
   await output.finalize();
   const bytes = output.target.buffer;

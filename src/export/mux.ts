@@ -143,7 +143,12 @@ export async function exportVideo(options: ExportVideoOptions): Promise<ExportVi
     const frames = slice[0].length;
     const data = new Float32Array(frames * channels);
     slice.forEach((ch, c) => data.set(ch, c * frames));
-    await audioSource.add(new AudioSample({ data, format: 'f32-planar', numberOfChannels: channels, sampleRate: sr, timestamp }));
+    const sample = new AudioSample({ data, format: 'f32-planar', numberOfChannels: channels, sampleRate: sr, timestamp });
+    try {
+      await audioSource.add(sample);
+    } finally {
+      sample.close();
+    }
   };
   try {
     let pos = 0;
