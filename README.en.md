@@ -49,6 +49,7 @@ Speed (measured on WebAssembly, single thread, a 2.1 GHz server CPU): about 0.73
 - Songs with vocals: some of the singing can stay with the dialogue.
 - Sound effects that resemble music (chimes, instrument-like sounds) may end up with the music.
 - Conversely, drone-like or ambience-like music can be classified as sound effects and remain at music level 0. Lower the sound effects volume as well in that case (only the dialogue stays).
+- Voice-like sounds (shouts, animal calls, rising vocal-like tones) are classified as dialogue and stay whatever the sliders say. Save the three stems to hear what went where.
 - You can leave some music in with the slider instead of removing it completely.
 
 ## Privacy
@@ -69,6 +70,7 @@ Use this only on material you own or have permission to edit.
 
 - MP3 input gains about 23 ms of silence at the start (the decoder ignores the encoder-delay information; audio-only input, so nothing goes out of sync).
 - The output audio can be a few tens of milliseconds longer than the input, up to the encoder's frame boundary.
+- When saving a video, the audio encoder's delay (2112 samples with the browser's built-in AAC encoder, 1024 with the bundled one, and so on) is measured on the spot and compensated; 1024 samples is assumed where it cannot be measured. The value used is shown in the "Export" row of the technical details.
 - WebGPU timings vary a lot between devices; `bench.html` measures your own.
 
 ## Development
