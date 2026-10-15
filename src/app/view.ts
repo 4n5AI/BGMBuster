@@ -341,6 +341,10 @@ export class View {
     if (tech.separateSeconds !== undefined) times.push(`separate ${tech.separateSeconds.toFixed(1)} s (${state.output?.chunks ?? 0} chunks)`);
     if (tech.exportSeconds !== undefined) times.push(`export ${tech.exportSeconds.toFixed(1)} s`);
     if (times.length) rows.push([t('tech.time'), times.join(' · ')]);
+    if (tech.exportCodec) {
+      const delay = tech.encoderDelay === undefined ? '' : tech.encoderDelay === null ? ` · ${t('tech.delay', { samples: '1024' })} (${t('tech.delay.default')})` : ` · ${t('tech.delay', { samples: String(tech.encoderDelay) })} (${t('tech.delay.measured')})`;
+      rows.push([t('tech.export'), `${tech.exportCodec} ${Math.round((tech.exportBitrate ?? 0) / 1000)} kbps${delay}`]);
+    }
     if (state.error?.detail) rows.push([t('tech.error'), state.error.detail]);
     return h(
       'details',

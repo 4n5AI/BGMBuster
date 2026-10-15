@@ -50,6 +50,8 @@ export interface Tech {
   decodeSeconds?: number;
   separateSeconds?: number;
   exportSeconds?: number;
+  exportCodec?: string;
+  exportBitrate?: number;
   encoderDelay?: number | null;
   wasmSlow?: boolean;
 }

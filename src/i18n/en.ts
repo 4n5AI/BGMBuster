@@ -74,6 +74,10 @@ export const en: Record<MessageKey, string> = {
   'tech.model': 'Model',
   'tech.time': 'Processing time',
   'tech.input': 'Input',
+  'tech.export': 'Export',
+  'tech.delay': 'encoder delay {samples} samples',
+  'tech.delay.measured': 'measured',
+  'tech.delay.default': 'default',
   'tech.error': 'Error details',
 
   'footer.license': 'MIT License © 4n5-Studio',

@@ -104,9 +104,9 @@ export async function exportVideo(options: ExportVideoOptions): Promise<ExportVi
   const channels = options.audio.length;
   const bitrate = pickBitrate(plan.codec, options.originalBitrate);
   await ensureAudioEncoder(plan.codec, channels, options.sampleRate, bitrate);
-  // Delay of encode -> mux -> decode for this codec on this browser; AAC-LC priming is 1024 samples when it
-  // cannot be measured (the polyfill does not signal it), Opus in WebM carries its pre-skip itself.
-  const measured = await measureEncoderDelay(plan.codec, channels, options.sampleRate, bitrate).catch(() => null);
+  // Delay of encode -> mux -> decode for this codec on this browser (Chrome's native AAC encoders prime with
+  // 2112 samples, the polyfill with 1024); 1024 when it cannot be measured, Opus in WebM carries its pre-skip itself.
+  const measured = await measureEncoderDelay({ codec: plan.codec, sampleRate: options.sampleRate, channels, bitrate }).catch(() => null);
   const delaySamples = measured ?? (plan.codec === 'aac' ? 1024 : 0);
   const target = options.writable ? new StreamTarget(options.writable as WritableStream<{ data: Uint8Array; position: number }>) : new BufferTarget();
   const output = new Output({ format: plan.format, target });

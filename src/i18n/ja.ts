@@ -72,6 +72,10 @@ export const ja = {
   'tech.model': 'モデル',
   'tech.time': '処理時間',
   'tech.input': '入力',
+  'tech.export': '書き出し',
+  'tech.delay': 'エンコーダー遅延 {samples} サンプル',
+  'tech.delay.measured': '実測',
+  'tech.delay.default': '既定値',
   'tech.error': 'エラーの詳細',
 
   'footer.license': 'MITライセンス © 4n5-Studio',

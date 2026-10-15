@@ -239,7 +239,7 @@ export class Pipeline {
           onProgress: (f) => this.store.set({ saveProgress: f }),
         });
         if (out.bytes) await target.finish(out.bytes, out.mimeType);
-        this.store.set({ tech: { ...this.store.get().tech, exportSeconds: (performance.now() - t0) / 1000, encoderDelay: out.encoderDelay } });
+        this.store.set({ tech: { ...this.store.get().tech, exportSeconds: (performance.now() - t0) / 1000, exportCodec: out.audioCodec, exportBitrate: out.audioBitrate, encoderDelay: out.encoderDelay } });
       } catch (e) {
         await target.cancel();
         throw e;
