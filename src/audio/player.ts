@@ -3,13 +3,14 @@
  * the sound comes from Web Audio so that "original / music removed / music only" and the music level can
  * change instantly without stopping. Play, pause and seeking follow the element's events; drift is corrected.
  *
- * Graph: mix ──gMix──┐
- *        voice ─gVoice┼─► master ─► destination        (voice = speech + sfx)
- *        music ─gMusic┘
- *   original      : gMix 1, gVoice 0, gMusic 0
- *   removed (A)   : gMix 0, gVoice 1, gMusic g
- *   removed (B)   : gMix 1, gVoice 0, gMusic -(1 - g)
- *   music only    : gMix 0, gVoice 0, gMusic 1
+ * Graph: mix ────gMix───┐
+ *        speech ─gSpeech┼─► master ─► destination
+ *        sfx ────gSfx───┤
+ *        music ──gMusic─┘
+ *   original      : mix 1
+ *   removed (A)   : speech 1, sfx h, music g
+ *   removed (B)   : mix 1, music -(1 - g), sfx -(1 - h)
+ *   music only    : music 1
  */
 import type { RemixMethod } from './remix.ts';
 
@@ -17,7 +18,8 @@ export type ListenMode = 'original' | 'removed' | 'music';
 
 export interface PlayerBuffers {
   mix: AudioBuffer;
-  voice: AudioBuffer;
+  speech: AudioBuffer;
+  sfx: AudioBuffer;
   music: AudioBuffer;
 }
 
@@ -25,7 +27,7 @@ const DRIFT_TOLERANCE = 0.06; // seconds
 
 export class SyncedPlayer {
   private context: AudioContext | null = null;
-  private gains: { mix: GainNode; voice: GainNode; music: GainNode; master: GainNode } | null = null;
+  private gains: { mix: GainNode; speech: GainNode; sfx: GainNode; music: GainNode; master: GainNode } | null = null;
   private sources: AudioBufferSourceNode[] = [];
   private startedAt = 0; // context time when sources started
   private startOffset = 0; // media time at which they started
@@ -34,6 +36,7 @@ export class SyncedPlayer {
   private mode: ListenMode = 'removed';
   private method: RemixMethod;
   private level = 0;
+  private sfxLevel = 1;
   private driftTimer: number | null = null;
   private readonly onPlay = (): void => void this.start();
   private readonly onPause = (): void => this.stop();
@@ -44,11 +47,12 @@ export class SyncedPlayer {
     for (const s of this.sources) s.playbackRate.value = this.media.playbackRate;
   };
 
-  constructor(media: HTMLMediaElement, buffers: PlayerBuffers, method: RemixMethod, level: number) {
+  constructor(media: HTMLMediaElement, buffers: PlayerBuffers, method: RemixMethod, level: number, sfxLevel = 1) {
     this.media = media;
     this.buffers = buffers;
     this.method = method;
     this.level = level;
+    this.sfxLevel = sfxLevel;
     media.muted = true;
     media.addEventListener('play', this.onPlay);
     media.addEventListener('pause', this.onPause);
@@ -63,13 +67,12 @@ export class SyncedPlayer {
     const master = context.createGain();
     master.connect(context.destination);
     const mix = context.createGain();
-    const voice = context.createGain();
+    const speech = context.createGain();
+    const sfx = context.createGain();
     const music = context.createGain();
-    mix.connect(master);
-    voice.connect(master);
-    music.connect(master);
+    for (const g of [mix, speech, sfx, music]) g.connect(master);
     this.context = context;
-    this.gains = { mix, voice, music, master };
+    this.gains = { mix, speech, sfx, music, master };
     this.applyGains(0);
     return context;
   }
@@ -77,12 +80,13 @@ export class SyncedPlayer {
   private applyGains(ramp = 0.02): void {
     if (!this.context || !this.gains) return;
     const g = Math.min(1, Math.max(0, this.level));
-    let values: [number, number, number];
-    if (this.mode === 'original') values = [1, 0, 0];
-    else if (this.mode === 'music') values = [0, 0, 1];
-    else values = this.method === 'A' ? [0, 1, g] : [1, 0, -(1 - g)];
+    const h = Math.min(1, Math.max(0, this.sfxLevel));
+    let values: [number, number, number, number]; // mix, speech, sfx, music
+    if (this.mode === 'original') values = [1, 0, 0, 0];
+    else if (this.mode === 'music') values = [0, 0, 0, 1];
+    else values = this.method === 'A' ? [0, 1, h, g] : [1, 0, -(1 - h), -(1 - g)];
     const t = this.context.currentTime;
-    const targets = [this.gains.mix, this.gains.voice, this.gains.music];
+    const targets = [this.gains.mix, this.gains.speech, this.gains.sfx, this.gains.music];
     targets.forEach((node, i) => {
       node.gain.cancelScheduledValues(t);
       if (ramp > 0) {
@@ -101,6 +105,11 @@ export class SyncedPlayer {
 
   setMusicLevel(level: number): void {
     this.level = level;
+    this.applyGains();
+  }
+
+  setSfxLevel(level: number): void {
+    this.sfxLevel = level;
     this.applyGains();
   }
 
@@ -128,7 +137,12 @@ export class SyncedPlayer {
       return s;
     };
     if (!this.gains) return;
-    this.sources = [make(this.buffers.mix, this.gains.mix), make(this.buffers.voice, this.gains.voice), make(this.buffers.music, this.gains.music)];
+    this.sources = [
+      make(this.buffers.mix, this.gains.mix),
+      make(this.buffers.speech, this.gains.speech),
+      make(this.buffers.sfx, this.gains.sfx),
+      make(this.buffers.music, this.gains.music),
+    ];
     this.startedAt = now;
     this.startOffset = offset;
     if (this.driftTimer === null) this.driftTimer = window.setInterval(() => this.checkDrift(), 500);

@@ -33,6 +33,8 @@ export const ja = {
   'listen.removed': 'BGM除去後',
   'listen.music': 'BGMのみ',
   'volume.label': 'BGMの音量',
+  'effects.label': '効果音の音量',
+  'note.effects': '効果音も消したいときは「効果音の音量」を下げてください。持続音や環境音のようなBGMは効果音に分類されることがあります。',
   'player.play': '再生',
   'player.pause': '一時停止',
   'save.video': '動画を保存',

@@ -1,6 +1,5 @@
 /** Rendering the one-column, three-step screen from the store state. */
 import { SyncedPlayer, type ListenMode } from '../audio/player.ts';
-import { toAudioBuffer } from '../audio/resample.ts';
 import { LIMITS, MODEL, REPO_URL } from '../config.ts';
 import { formatBytes, formatClock, formatDimensions, formatDurationWords, formatPercent, getLang, LANGS, setLang, t, type Lang } from '../i18n/index.ts';
 import type { MessageKey } from '../i18n/ja.ts';
@@ -43,6 +42,7 @@ export class View {
     if (state.phase === 'done' && state.output && !this.player) this.createPlayer(state);
     this.player?.setMode(state.listen);
     this.player?.setMusicLevel(state.musicLevel);
+    this.player?.setSfxLevel(state.sfxLevel);
     this.player?.setMethod(state.method);
   }
 
@@ -248,18 +248,8 @@ export class View {
   private createPlayer(state: AppState): void {
     const out = state.output!;
     if (!this.media) return;
-    const voice = out.speech.map((s, c) => {
-      const v = new Float32Array(s.length);
-      const f = out.sfx[c];
-      for (let i = 0; i < v.length; i++) v[i] = s[i] + f[i];
-      return v;
-    });
-    const buffers = {
-      mix: toAudioBuffer(out.mix, out.sampleRate),
-      voice: toAudioBuffer(voice, out.sampleRate),
-      music: toAudioBuffer(out.music, out.sampleRate),
-    };
-    this.player = new SyncedPlayer(this.media, buffers, state.method, state.musicLevel);
+    const buffers = { mix: out.mix, speech: out.speech, sfx: out.sfx, music: out.music };
+    this.player = new SyncedPlayer(this.media, buffers, state.method, state.musicLevel, state.sfxLevel);
     this.player.setMode(state.listen);
     this.playerFor = out;
   }
@@ -283,20 +273,20 @@ export class View {
       { mode: 'music', key: 'listen.music' },
     ];
     const sliderDisabled = state.listen !== 'removed';
-    const slider = h('input', {
-      type: 'range',
-      id: 'music-level',
-      min: 0,
-      max: 100,
-      step: 1,
-      value: Math.round(state.musicLevel * 100),
-      disabled: sliderDisabled,
-      'aria-valuetext': formatPercent(state.musicLevel),
-      oninput: (ev: Event) => {
-        const v = Number((ev.target as HTMLInputElement).value) / 100;
-        this.store.set({ musicLevel: v });
-      },
-    });
+    const makeSlider = (id: string, value: number, onInput: (v: number) => void): HTMLInputElement =>
+      h('input', {
+        type: 'range',
+        id,
+        min: 0,
+        max: 100,
+        step: 1,
+        value: Math.round(value * 100),
+        disabled: sliderDisabled,
+        'aria-valuetext': formatPercent(value),
+        oninput: (ev: Event) => onInput(Number((ev.target as HTMLInputElement).value) / 100),
+      });
+    const slider = makeSlider('music-level', state.musicLevel, (v) => this.store.set({ musicLevel: v }));
+    const sfxSlider = makeSlider('sfx-level', state.sfxLevel, (v) => this.store.set({ sfxLevel: v }));
     return h(
       'div',
       { class: 'listen' },
@@ -311,6 +301,8 @@ export class View {
         ),
       ),
       h('div', { class: 'slider', 'data-disabled': sliderDisabled }, h('label', { for: 'music-level' }, t('volume.label')), slider, h('span', { 'aria-hidden': 'true' }, formatPercent(state.musicLevel))),
+      h('div', { class: 'slider', 'data-disabled': sliderDisabled }, h('label', { for: 'sfx-level' }, t('effects.label')), sfxSlider, h('span', { 'aria-hidden': 'true' }, formatPercent(state.sfxLevel))),
+      h('p', { class: 'note' }, t('note.effects')),
     );
   }
 

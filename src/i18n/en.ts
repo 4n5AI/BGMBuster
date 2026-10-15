@@ -35,6 +35,8 @@ export const en: Record<MessageKey, string> = {
   'listen.removed': 'Music removed',
   'listen.music': 'Music only',
   'volume.label': 'Music volume',
+  'effects.label': 'Sound effects volume',
+  'note.effects': 'Lower the sound effects volume if the music is not removed: drones and ambience-like music can be classified as sound effects.',
   'player.play': 'Play',
   'player.pause': 'Pause',
   'save.video': 'Save video',

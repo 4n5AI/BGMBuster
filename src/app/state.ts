@@ -28,12 +28,12 @@ export interface AppError {
 }
 
 export interface SeparationOutput {
-  /** All at the model sample rate, one Float32Array per channel. */
+  /** All at the model sample rate; AudioBuffers are the single copy used for both preview and export. */
   sampleRate: number;
-  mix: Float32Array[];
-  speech: Float32Array[];
-  sfx: Float32Array[];
-  music: Float32Array[];
+  mix: AudioBuffer;
+  speech: AudioBuffer;
+  sfx: AudioBuffer;
+  music: AudioBuffer;
   /** The input's own sample rate and audio start offset, for writing files. */
   nativeSampleRate: number;
   audioOffsetSeconds: number;
@@ -63,6 +63,7 @@ export interface AppState {
   output: SeparationOutput | null;
   listen: ListenMode;
   musicLevel: number;
+  sfxLevel: number;
   method: RemixMethod;
   saving: 'video' | 'audio' | 'stem' | null;
   saveProgress: number | null;
@@ -81,6 +82,7 @@ export const initialState: AppState = {
   output: null,
   listen: 'removed',
   musicLevel: 0,
+  sfxLevel: 1,
   method: 'B',
   saving: null,
   saveProgress: null,

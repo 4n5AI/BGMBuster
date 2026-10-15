@@ -6,7 +6,7 @@ Removes **only the background music** from a video (or an audio file) and keeps 
 
 1. **Choose a file** (MP4, MOV, WebM, WAV, MP3 or M4A)
 2. **Remove the music** (the AI model, about 31 MB, is downloaded the first time only)
-3. **Review and save**: listen to the original, the result or the music alone in sync with the picture, set the music level from 0 to 100 %, and save the video without re-encoding the picture
+3. **Review and save**: listen to the original, the result or the music alone in sync with the picture, set the music and sound-effects levels from 0 to 100 %, and save the video without re-encoding the picture
 
 - No API key, no account, no sign-up.
 - **Your file never leaves your device.** The only network traffic is the page itself and the first download of the model.
@@ -48,6 +48,7 @@ Speed (measured on WebAssembly, single thread, a 2.1 GHz server CPU): about 0.73
 
 - Songs with vocals: some of the singing can stay with the dialogue.
 - Sound effects that resemble music (chimes, instrument-like sounds) may end up with the music.
+- Conversely, drone-like or ambience-like music can be classified as sound effects and remain at music level 0. Lower the sound effects volume as well in that case (only the dialogue stays).
 - You can leave some music in with the slider instead of removing it completely.
 
 ## Privacy

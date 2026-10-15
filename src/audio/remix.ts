@@ -1,7 +1,7 @@
 /**
- * Re-mixing the separated sounds with a music level g in [0, 1].
- *   method A: out = speech + sfx + g * music
- *   method B: out = mix - (1 - g) * music   (keeps everything the model did not call music)
+ * Re-mixing the separated sounds with a music level g and a sound-effects level h, both in [0, 1].
+ *   method A: out = speech + h * sfx + g * music
+ *   method B: out = mix - (1 - g) * music - (1 - h) * sfx   (keeps everything the model did not call music/sfx)
  */
 export type RemixMethod = 'A' | 'B';
 
@@ -12,15 +12,17 @@ export interface StemChannels {
   music: Float32Array;
 }
 
-export function remixChannel(method: RemixMethod, s: StemChannels, musicLevel: number, out?: Float32Array): Float32Array {
+export function remixChannel(method: RemixMethod, s: StemChannels, musicLevel: number, sfxLevel = 1, out?: Float32Array): Float32Array {
   const n = s.mix.length;
   const y = out ?? new Float32Array(n);
   const g = Math.min(1, Math.max(0, musicLevel));
+  const h = Math.min(1, Math.max(0, sfxLevel));
   if (method === 'A') {
-    for (let i = 0; i < n; i++) y[i] = s.speech[i] + s.sfx[i] + g * s.music[i];
+    for (let i = 0; i < n; i++) y[i] = s.speech[i] + h * s.sfx[i] + g * s.music[i];
   } else {
-    const k = 1 - g;
-    for (let i = 0; i < n; i++) y[i] = s.mix[i] - k * s.music[i];
+    const km = 1 - g;
+    const ks = 1 - h;
+    for (let i = 0; i < n; i++) y[i] = s.mix[i] - km * s.music[i] - ks * s.sfx[i];
   }
   return y;
 }

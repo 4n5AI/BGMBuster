@@ -1,7 +1,7 @@
 /** Orchestration: file -> decode -> separate -> preview buffers, and the three ways of saving. */
 import { CHUNK, EXPORT, INPUT_TARGET_LUFS, LIMITS, MODEL } from '../config.ts';
 import { applyGain, clipSafeGain, remixChannel } from '../audio/remix.ts';
-import { resampleChannels } from '../audio/resample.ts';
+import { resampleChannels, toAudioBuffer } from '../audio/resample.ts';
 import { encodeWav16 } from '../audio/wav.ts';
 import { ExportError, exportVideo } from '../export/mux.ts';
 import { chooseSaveTarget, replaceExtension } from '../export/save.ts';
@@ -149,10 +149,10 @@ export class Pipeline {
       tech.separateSeconds = (performance.now() - t2) / 1000;
       const output: SeparationOutput = {
         sampleRate: modelRate,
-        mix,
-        speech: result.speech,
-        sfx: result.sfx,
-        music: result.music,
+        mix: toAudioBuffer(mix, modelRate),
+        speech: toAudioBuffer(result.speech, modelRate),
+        sfx: toAudioBuffer(result.sfx, modelRate),
+        music: toAudioBuffer(result.music, modelRate),
         nativeSampleRate: decoded.sampleRate,
         audioOffsetSeconds: decoded.firstTimestamp,
         elapsedSeconds: result.elapsedSeconds,
@@ -190,10 +190,15 @@ export class Pipeline {
 
   /** The re-mixed signal at the model rate, then at the file's own rate, with a clip-safe gain. */
   private async renderMix(): Promise<{ channels: Float32Array[]; sampleRate: number }> {
-    const { output, method, musicLevel } = this.store.get();
+    const { output, method, musicLevel, sfxLevel } = this.store.get();
     if (!output) throw new Error('nothing to save');
-    const channels = output.mix.map((_, c) =>
-      remixChannel(method, { mix: output.mix[c], speech: output.speech[c], sfx: output.sfx[c], music: output.music[c] }, musicLevel),
+    const channels = Array.from({ length: output.mix.numberOfChannels }, (_, c) =>
+      remixChannel(
+        method,
+        { mix: output.mix.getChannelData(c), speech: output.speech.getChannelData(c), sfx: output.sfx.getChannelData(c), music: output.music.getChannelData(c) },
+        musicLevel,
+        sfxLevel,
+      ),
     );
     applyGain(channels, clipSafeGain(channels));
     const native = await resampleChannels(channels, output.sampleRate, output.nativeSampleRate, 2);
@@ -261,7 +266,8 @@ export class Pipeline {
       const suffix = { speech: '-dialogue', sfx: '-effects', music: '-music' }[stem];
       const target = await chooseSaveTarget(replaceExtension(state.file.name, suffix, '.wav'), 'audio/wav', '.wav');
       if (!target) return;
-      const channels = output[stem].map((ch) => ch.slice());
+      const buffer = output[stem];
+      const channels = Array.from({ length: buffer.numberOfChannels }, (_, c) => buffer.getChannelData(c).slice());
       applyGain(channels, clipSafeGain(channels));
       const native = await resampleChannels(channels, output.sampleRate, output.nativeSampleRate, 2);
       await this.writeWav(target, native, output.nativeSampleRate);
