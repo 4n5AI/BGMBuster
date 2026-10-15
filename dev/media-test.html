@@ -1,0 +1,21 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex">
+<title>BGM Buster — media round trip test</title>
+<style>
+  :root { color-scheme: light dark; font-family: system-ui, sans-serif; }
+  body { max-width: 720px; margin: 2rem auto; padding: 0 16px; line-height: 1.5; }
+  pre { white-space: pre-wrap; word-break: break-word; background: rgba(127,127,127,0.12); padding: 1rem; border-radius: 8px; }
+</style>
+</head>
+<body>
+<h1>Media round trip</h1>
+<p>Opens a file, decodes its audio, resamples to 44.1 kHz and back, and writes the video with the audio re-muxed (no separation). Used by the automated check.</p>
+<p><input id="file" type="file"></p>
+<pre id="log">ready</pre>
+<script type="module" src="/src/dev/mediaTest.ts"></script>
+</body>
+</html>
